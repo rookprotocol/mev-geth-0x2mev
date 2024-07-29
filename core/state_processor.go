@@ -121,7 +121,7 @@ func ApplyTransactionWithEVM(msg *Message, config *params.ChainConfig, gp *GasPo
 	evm.Reset(txContext, statedb)
 
 	// Apply the transaction to the current state (included in the env).
-	result, err := ApplyMessage(evm, msg, gp)
+	result, err = ApplyMessage(evm, msg, gp)
 	if err != nil {
 		return nil, nil, err
 	}

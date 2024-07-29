@@ -1199,12 +1199,7 @@ func DoSingleMulticall(ctx context.Context, b Backend, args TransactionArgs, sta
 	defer cancel()
 
 	// Get a new instance of the EVM.
-	msg, err := args.ToMessage(globalGasCap, header.BaseFee)
-	if err != nil {
-		return map[string]interface{}{
-			"error": err,
-		}
-	}
+	msg := args.ToMessage(header.BaseFee)
 	blockCtx := core.NewEVMBlockContext(header, NewChainContext(ctx, b), nil)
 	// if blockOverrides != nil {
 	// 	blockOverrides.Apply(&blockCtx)
@@ -1734,18 +1729,15 @@ func AccessListOnState(ctx context.Context, b Backend, header *types.Header, db 
 		statedb := db.Copy() // woops shouldn't have removed this lol
 		// Set the accesslist to the last al
 		args.AccessList = &accessList
-		msg, err := args.ToMessage(b.RPCGasCap(), header.BaseFee)
-		if err != nil {
-			return nil, 0, nil, err
-		}
+		msg := args.ToMessage(header.BaseFee)
 
 		// Apply the transaction with the access list tracer
 		tracer := logger.NewAccessListTracer(accessList, args.from(), to, precompiles)
-		config := vm.Config{Tracer: tracer, NoBaseFee: true}
+		config := vm.Config{Tracer: tracer.Hooks(), NoBaseFee: true}
 		vmenv := b.GetEVM(ctx, msg, statedb, header, &config, nil)
 		res, err := core.ApplyMessage(vmenv, msg, new(core.GasPool).AddGas(msg.GasLimit))
 		if err != nil {
-			return nil, 0, nil, fmt.Errorf("failed to apply transaction: %v err: %v", args.toTransaction().Hash(), err)
+			return nil, 0, nil, fmt.Errorf("failed to apply transaction: %v err: %v", args.ToTransaction().Hash(), err)
 		}
 		if tracer.Equal(prevTracer) {
 			return accessList, res.UsedGas, res.Err, nil
@@ -2693,9 +2685,6 @@ func (s *SearcherAPI) EstimateGasBundle(ctx context.Context, args EstimateGasBun
 	// This makes sure resources are cleaned up
 	defer cancel()
 
-	// RPC Call gas cap
-	globalGasCap := s.b.RPCGasCap()
-
 	// Results
 	results := []map[string]interface{}{}
 
@@ -2722,10 +2711,7 @@ func (s *SearcherAPI) EstimateGasBundle(ctx context.Context, args EstimateGasBun
 		accessListState := statedb.Copy() // create a copy just in case we use it later for access list creation
 
 		// Convert tx args to msg to apply state transition
-		msg, err := txArgs.ToMessage(globalGasCap, header.BaseFee)
-		if err != nil {
-			return nil, err
-		}
+		msg := txArgs.ToMessage(header.BaseFee)
 
 		// Prepare the hashes
 		txContext := core.NewEVMTxContext(msg)
