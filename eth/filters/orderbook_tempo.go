@@ -23,6 +23,7 @@ import (
 var (
 	ORDERBOOKNAME_TEMPO    = "tempo"
 	ORDERBOOKADDRESS_TEMPO = common.HexToAddress("0x93be362993d5B3954dbFdA49A1Ad1844c8083A30")
+	PERMIT2ADDRESS         = common.HexToAddress("0x000000000022D473030F116dDEE9F6B43aC78BA3")
 )
 
 type TempoOrder struct {
@@ -228,24 +229,22 @@ func tempoGetOnChainData(tempoOrder TempoOrder) (OnChainData, error) {
 		return onChainData, fmt.Errorf("failed to get maker balance: %v", err)
 	}
 
-	// check if it is a permit2 order
+	// Get the maker allowance
+	// set the spender address based on the permit2 flag
+	var spender common.Address
 	decodedDataInt, err := tempoDecodeOrderDataInt(tempoOrder.OffChainData.Order.Data)
 	if err != nil {
 		return onChainData, fmt.Errorf("failed to decode order data: %v", err)
 	}
-	// if permit2 order
 	if decodedDataInt.UsePermit2 {
-		log.Println("permit2 order found")
-		// get the maker allowance set in the permit2 contract
-		// log an error to integrate this part
-		log.Fatalln("permit2 allowance check not implemented yet")
+		spender = PERMIT2ADDRESS
 	} else {
-		// get the maker allowance set in the maker token contract
-		onChainData.MakerAllowance_weiUnits, err = GetERC20TokenAllowance(
-			tempoOrder.OffChainData.Order.MakerToken, tempoOrder.OffChainData.Order.Maker, ORDERBOOKADDRESS_TEMPO)
-		if err != nil {
-			return onChainData, fmt.Errorf("failed to get maker allowance: %v", err)
-		}
+		spender = ORDERBOOKADDRESS_TEMPO
+	}
+	onChainData.MakerAllowance_weiUnits, err = GetERC20TokenAllowance(
+		tempoOrder.OffChainData.Order.MakerToken, tempoOrder.OffChainData.Order.Maker, spender)
+	if err != nil {
+		return onChainData, fmt.Errorf("failed to get maker allowance: %v", err)
 	}
 
 	// get the order info
