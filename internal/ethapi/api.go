@@ -1290,7 +1290,7 @@ func DoSingleMulticall(ctx context.Context, b Backend, args TransactionArgs, sta
 	defer cancel()
 
 	// Get a new instance of the EVM.
-	msg := args.ToMessage(header.BaseFee)
+	msg := args.ToMessage(header.BaseFee, true, true)
 	blockCtx := core.NewEVMBlockContext(header, NewChainContext(ctx, b), nil)
 	// if blockOverrides != nil {
 	// 	blockOverrides.Apply(&blockCtx)
@@ -1348,7 +1348,8 @@ func (s *BlockChainAPI) Multicall(ctx context.Context, txs []TransactionArgs, bl
 	if state == nil || err != nil {
 		return nil, err
 	}
-	if err := overrides.Apply(state); err != nil {
+
+	if err := overrides.Apply(state, nil); err != nil {
 		return nil, err
 	}
 	for _, tx := range txs {
@@ -1371,6 +1372,8 @@ func executeEstimate(ctx context.Context, b Backend, args TransactionArgs, state
 		return true, nil, err // Bail out
 	}
 	return result.Failed(), result, nil
+}
+
 // SimulateV1 executes series of transactions on top of a base state.
 // The transactions are packed into blocks. For each block, block header
 // fields can be overridden. The state can also be overridden prior to
@@ -1871,7 +1874,7 @@ func AccessListOnState(ctx context.Context, b Backend, header *types.Header, db 
 		statedb := db.Copy() // woops shouldn't have removed this lol
 		// Set the accesslist to the last al
 		args.AccessList = &accessList
-		msg := args.ToMessage(header.BaseFee)
+		msg := args.ToMessage(header.BaseFee, true, true)
 
 		// Apply the transaction with the access list tracer
 		tracer := logger.NewAccessListTracer(accessList, args.from(), to, precompiles)
@@ -1879,7 +1882,7 @@ func AccessListOnState(ctx context.Context, b Backend, header *types.Header, db 
 		vmenv := b.GetEVM(ctx, msg, statedb, header, &config, nil)
 		res, err := core.ApplyMessage(vmenv, msg, new(core.GasPool).AddGas(msg.GasLimit))
 		if err != nil {
-			return nil, 0, nil, fmt.Errorf("failed to apply transaction: %v err: %v", args.ToTransaction().Hash(), err)
+			return nil, 0, nil, fmt.Errorf("failed to apply transaction: %v err: %v", args.ToTransaction(types.LegacyTxType).Hash(), err)
 		}
 		if tracer.Equal(prevTracer) {
 			return accessList, res.UsedGas, res.Err, nil
@@ -2583,7 +2586,7 @@ func (s *SearcherAPI) CallBundle(ctx context.Context, args CallBundleArgs) (map[
 	if state == nil || err != nil {
 		return nil, err
 	}
-	if err := args.StateOverrides.Apply(state); err != nil {
+	if err := args.StateOverrides.Apply(state, nil); err != nil {
 		return nil, err
 	}
 	blockNumber := big.NewInt(int64(args.BlockNumber))
@@ -2789,7 +2792,7 @@ func (s *SearcherAPI) EstimateGasBundle(ctx context.Context, args EstimateGasBun
 	if state == nil || err != nil {
 		return nil, err
 	}
-	if err := args.StateOverrides.Apply(state); err != nil {
+	if err := args.StateOverrides.Apply(state, nil); err != nil {
 		return nil, err
 	}
 
@@ -2853,7 +2856,7 @@ func (s *SearcherAPI) EstimateGasBundle(ctx context.Context, args EstimateGasBun
 		accessListState := statedb.Copy() // create a copy just in case we use it later for access list creation
 
 		// Convert tx args to msg to apply state transition
-		msg := txArgs.ToMessage(header.BaseFee)
+		msg := txArgs.ToMessage(header.BaseFee, true, true)
 
 		// Prepare the hashes
 		txContext := core.NewEVMTxContext(msg)
