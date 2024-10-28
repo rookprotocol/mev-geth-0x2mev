@@ -1570,24 +1570,6 @@ func RPCMarshalCompactLogs(logs [][]*types.Log) []map[string]interface{} {
 	return logMap
 }
 
-// rpcMarshalHeader uses the generalized output filler, then adds the total difficulty field, which requires
-// a `BlockchainAPI`.
-func (api *BlockChainAPI) rpcMarshalHeader(ctx context.Context, header *types.Header) map[string]interface{} {
-	fields := RPCMarshalHeader(header)
-	fields["totalDifficulty"] = (*hexutil.Big)(api.b.GetTd(ctx, header.Hash()))
-	return fields
-}
-
-// rpcMarshalBlock uses the generalized output filler, then adds the total difficulty field, which requires
-// a `BlockchainAPI`.
-func (api *BlockChainAPI) rpcMarshalBlock(ctx context.Context, b *types.Block, inclTx bool, fullTx bool) (map[string]interface{}, error) {
-	fields := RPCMarshalBlock(b, inclTx, fullTx, api.b.ChainConfig())
-	if inclTx {
-		fields["totalDifficulty"] = (*hexutil.Big)(api.b.GetTd(ctx, b.Hash()))
-	}
-	return fields, nil
-}
-
 // RPCTransaction represents a transaction that will serialize to the RPC representation of a transaction
 type RPCTransaction struct {
 	BlockHash           *common.Hash      `json:"blockHash"`
