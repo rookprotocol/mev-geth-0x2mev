@@ -284,7 +284,7 @@ func waitForHTTPServerToStart() {
 
 // initRedis initializes the Redis client by performing the following steps:
 // 1. Retrieves the current working directory and logs it.
-// 2. Constructs the path to the .env file located in the parent directory of the current working directory.
+// 2. Constructs the path to the .env file located in the current working directory.
 // 3. Opens the .env file and reads it line by line, setting environment variables for each key-value pair found.
 // 4. Initializes the Redis client using the environment variables REDIS_HOST, REDIS_PORT, and REDIS_PASSWORD.
 //
@@ -295,10 +295,9 @@ func initRedis() {
 	if err != nil {
 		log.Fatalf("Error getting current working directory: %v", err)
 	}
-	parentDir := filepath.Dir(workdir)
 
 	// Construct the path to the .env file
-	envFilePath := filepath.Join(parentDir, ".env")
+	envFilePath := filepath.Join(workdir, ".env")
 
 	// Open the .env file
 	file, err := os.Open(envFilePath)
