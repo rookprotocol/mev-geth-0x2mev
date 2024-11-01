@@ -7,6 +7,11 @@ import (
 	"math/big"
 	"time"
 	"github.com/go-redis/redis/v8"
+	"path/filepath"
+	"os"
+	"log"
+	"bufio"
+	"strings"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
@@ -277,11 +282,63 @@ func waitForHTTPServerToStart() {
 	}
 }
 
-
+// initRedis initializes the Redis client by performing the following steps:
+// 1. Retrieves the current working directory and logs it.
+// 2. Constructs the path to the .env file located in the parent directory of the current working directory.
+// 3. Opens the .env file and reads it line by line, setting environment variables for each key-value pair found.
+// 4. Initializes the Redis client using the environment variables REDIS_HOST, REDIS_PORT, and REDIS_PASSWORD.
+//
+// If any error occurs during these steps, the function logs the error and terminates the program.
 func initRedis() {
+	// Get the current working directory
+	workdir, err := os.Getwd()
+	if err != nil {
+		log.Fatalf("Error getting current working directory: %v", err)
+	}
+	parentDir := filepath.Dir(workdir)
+
+	// Construct the path to the .env file
+	envFilePath := filepath.Join(parentDir, ".env")
+
+	// Open the .env file
+	file, err := os.Open(envFilePath)
+	if err != nil {
+		log.Fatalf("Error opening .env file: %v", err)
+	}
+	defer file.Close()
+
+	// Read the file line by line
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		line := scanner.Text()
+		// Skip comments and empty lines
+		if strings.HasPrefix(line, "#") || strings.TrimSpace(line) == "" {
+			continue
+		}
+		// Split the line into key and value
+		parts := strings.SplitN(line, "=", 2)
+		if len(parts) != 2 {
+			continue
+		}
+		key := strings.TrimSpace(parts[0])
+		value := strings.TrimSpace(parts[1])
+		// Set the environment variable
+		os.Setenv(key, value)
+	}
+
+	if err := scanner.Err(); err != nil {
+		log.Fatalf("Error reading .env file: %v", err)
+	}
+
+	// Initialize Redis client using environment variables
+	redisHost := os.Getenv("REDIS_HOST")
+	redisPort := os.Getenv("REDIS_PORT")
+	redisPassword := os.Getenv("REDIS_PASSWORD")
+
 	sharedRdb = redis.NewClient(&redis.Options{
-		Addr:     "localhost:6379",
-		Password: "", // no password set
-		DB:       0,  // use default DB
+		Addr:     fmt.Sprintf("%s:%s", redisHost, redisPort),
+		Password: redisPassword,
+		DB:       0, // use default DB
 	})
+	log.Println("initRedis: connected to redis")
 }
