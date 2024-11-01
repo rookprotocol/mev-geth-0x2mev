@@ -50,7 +50,7 @@ func (s *TempoAPI) Tempo_DoCall(ctx context.Context, b Backend, args Transaction
 	if state == nil || err != nil {
 		return nil, err
 	}
-	if err := overrides.Apply(state); err != nil {
+	if err := overrides.Apply(state, nil); err != nil {
 		return nil, err
 	}
 
@@ -74,10 +74,7 @@ func (s *TempoAPI) Tempo_DoCall(ctx context.Context, b Backend, args Transaction
 	defer cancel()
 
 	// Get a new instance of the EVM.
-	msg, err := args.ToMessage(globalGasCap, header.BaseFee)
-	if err != nil {
-		return nil, err
-	}
+	msg := args.ToMessage(header.BaseFee, false, false)
 	blockCtx := core.NewEVMBlockContext(header, NewChainContext(ctx, b), nil)
 	if blockOverrides != nil {
 		blockOverrides.Apply(&blockCtx)
@@ -129,7 +126,7 @@ func (s *TempoAPI) Tempo_DoEstimateGas(ctx context.Context, b Backend, args Tran
 	if state == nil || err != nil {
 		return 0, err
 	}
-	if err = overrides.Apply(state); err != nil {
+	if err = overrides.Apply(state, nil); err != nil {
 		return 0, err
 	}
 
@@ -149,10 +146,7 @@ func (s *TempoAPI) Tempo_DoEstimateGas(ctx context.Context, b Backend, args Tran
 		ErrorRatio: estimateGasErrorRatio,
 	}
 	// Run the gas estimation andwrap any revertals into a custom return
-	call, err := args.ToMessage(gasCap, header.BaseFee)
-	if err != nil {
-		return 0, err
-	}
+	call := args.ToMessage(header.BaseFee, false, false)
 	estimate, revert, err := gasestimator.Estimate(ctx, call, opts, gasCap)
 	if err != nil {
 		if len(revert) > 0 {
