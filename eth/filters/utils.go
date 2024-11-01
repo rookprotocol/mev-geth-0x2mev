@@ -295,9 +295,11 @@ func initRedis() {
 	if err != nil {
 		log.Fatalf("Error getting current working directory: %v", err)
 	}
+	log.Println("initRedis: workdir", workdir)
 
 	// Construct the path to the .env file
 	envFilePath := filepath.Join(workdir, ".env")
+	log.Println("initRedis: envFilePath", envFilePath)
 
 	// Open the .env file
 	file, err := os.Open(envFilePath)
