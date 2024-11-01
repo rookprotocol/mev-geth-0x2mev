@@ -336,6 +336,8 @@ func initRedis() {
 	redisPort := os.Getenv("REDIS_PORT")
 	redisPassword := os.Getenv("REDIS_PASSWORD")
 
+	log.Println("initRedis: redisHost", redisHost)
+
 	sharedRdb = redis.NewClient(&redis.Options{
 		Addr:     fmt.Sprintf("%s:%s", redisHost, redisPort),
 		Password: redisPassword,
