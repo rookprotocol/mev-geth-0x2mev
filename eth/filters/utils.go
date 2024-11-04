@@ -3,19 +3,29 @@ package filters
 import (
 	"errors"
 	"fmt"
+	"github.com/go-redis/redis/v8"
+	"log"
 	"math"
 	"math/big"
 	"time"
-	"github.com/go-redis/redis/v8"
-	"path/filepath"
-	"os"
-	"log"
-	"bufio"
-	"strings"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 )
+
+
+// create a struct for the redis config host port and password
+type RedisConfig struct {
+	Host     string `toml:",omitempty"`
+	Port     int    `toml:",omitempty"`
+	Password string `toml:",omitempty"`
+}
+
+var DefaultRedisConfig = RedisConfig{
+	Host:     "localhost",
+	Port:     6379,
+	Password: "",
+}
 
 // ConvertWeiUnitsToEtherUnits_UsingTokenAddress takes in tokenAmount as a big.Int and token address,
 // and returns the balance in ether units. It now also returns an error if it cannot complete the conversion.
@@ -282,65 +292,14 @@ func waitForHTTPServerToStart() {
 	}
 }
 
-// initRedis initializes the Redis client by performing the following steps:
-// 1. Retrieves the current working directory and logs it.
-// 2. Constructs the path to the .env file located in the current working directory.
-// 3. Opens the .env file and reads it line by line, setting environment variables for each key-value pair found.
-// 4. Initializes the Redis client using the environment variables REDIS_HOST, REDIS_PORT, and REDIS_PASSWORD.
-//
-// If any error occurs during these steps, the function logs the error and terminates the program.
+// initRedis initializes the Redis client using the values from DefaultRedisConfig.
 func initRedis() {
-	// Get the current working directory
-	workdir, err := os.Getwd()
-	if err != nil {
-		log.Fatalf("Error getting current working directory: %v", err)
-	}
-	log.Println("initRedis: workdir", workdir)
+	log.Println("initRedis: initializing redis...")
 
-	// Construct the path to the .env file
-	envFilePath := filepath.Join(workdir, ".env")
-	log.Println("initRedis: envFilePath", envFilePath)
-
-	// Open the .env file
-	file, err := os.Open(envFilePath)
-	if err != nil {
-		log.Fatalf("Error opening .env file: %v", err)
-	}
-	defer file.Close()
-
-	// Read the file line by line
-	scanner := bufio.NewScanner(file)
-	for scanner.Scan() {
-		line := scanner.Text()
-		// Skip comments and empty lines
-		if strings.HasPrefix(line, "#") || strings.TrimSpace(line) == "" {
-			continue
-		}
-		// Split the line into key and value
-		parts := strings.SplitN(line, "=", 2)
-		if len(parts) != 2 {
-			continue
-		}
-		key := strings.TrimSpace(parts[0])
-		value := strings.TrimSpace(parts[1])
-		// Set the environment variable
-		os.Setenv(key, value)
-	}
-
-	if err := scanner.Err(); err != nil {
-		log.Fatalf("Error reading .env file: %v", err)
-	}
-
-	// Initialize Redis client using environment variables
-	redisHost := os.Getenv("REDIS_HOST")
-	redisPort := os.Getenv("REDIS_PORT")
-	redisPassword := os.Getenv("REDIS_PASSWORD")
-
-	log.Println("initRedis: redisHost", redisHost)
-
+	// Initialize Redis client using DefaultRedisConfig
 	sharedRdb = redis.NewClient(&redis.Options{
-		Addr:     fmt.Sprintf("%s:%s", redisHost, redisPort),
-		Password: redisPassword,
+		Addr:     fmt.Sprintf("%s:%d", DefaultRedisConfig.Host, DefaultRedisConfig.Port),
+		Password: DefaultRedisConfig.Password,
 		DB:       0, // use default DB
 	})
 	log.Println("initRedis: connected to redis")
