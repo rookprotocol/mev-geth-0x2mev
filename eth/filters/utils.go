@@ -13,18 +13,19 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 )
 
-
 // create a struct for the redis config host port and password
 type RedisConfig struct {
-	Host     string `toml:",omitempty"`
-	Port     int    `toml:",omitempty"`
-	Password string `toml:",omitempty"`
+	Host     string
+	Port     int
+	Password string
+	DB       int
 }
 
 var DefaultRedisConfig = RedisConfig{
 	Host:     "localhost",
 	Port:     6379,
 	Password: "",
+	DB:       0,
 }
 
 // ConvertWeiUnitsToEtherUnits_UsingTokenAddress takes in tokenAmount as a big.Int and token address,
@@ -74,7 +75,8 @@ func ConvertWeiUnitsToEtherUnits_UsingTokenAddress(tokenAmount *big.Int, tokenAd
 	// Convert tokenAmount that are in wei units to ether units using the decimals
 	tokenDecimals_float64 := float64(tokenDecimals[0].(uint8))
 	tokenAmount_float64 := new(big.Float).SetInt(tokenAmount)
-	tokenAmount_etherUnits, _ := new(big.Float).Quo(tokenAmount_float64, new(big.Float).Mul(big.NewFloat(math.Pow(10.0, tokenDecimals_float64)), big.NewFloat(1))).Float64()
+	tokenAmount_etherUnits, _ := new(big.Float).Quo(tokenAmount_float64,
+		new(big.Float).Mul(big.NewFloat(math.Pow(10.0, tokenDecimals_float64)), big.NewFloat(1))).Float64()
 	return tokenAmount_etherUnits, nil // Return nil error on success
 }
 
@@ -300,7 +302,9 @@ func initRedis() {
 	sharedRdb = redis.NewClient(&redis.Options{
 		Addr:     fmt.Sprintf("%s:%d", DefaultRedisConfig.Host, DefaultRedisConfig.Port),
 		Password: DefaultRedisConfig.Password,
-		DB:       0, // use default DB
+		DB:       DefaultRedisConfig.DB,
 	})
+	// log the hostname
+	log.Println("initRedis: HOSTNAME: ", DefaultRedisConfig.Host)
 	log.Println("initRedis: connected to redis")
 }

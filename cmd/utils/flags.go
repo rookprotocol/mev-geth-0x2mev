@@ -994,6 +994,13 @@ var (
         Value:    filters.DefaultRedisConfig.Password,
         Category: flags.RedisCategory,
     }
+
+	RedisDBFlag = &cli.IntFlag{
+		Name:     "redis.db",
+		Usage:    "Redis DB to connect to (smg) shared redis",
+		Value:    filters.DefaultRedisConfig.DB,
+		Category: flags.RedisCategory,
+	}
 )
 
 var (
@@ -1002,6 +1009,7 @@ var (
         RedisHostNameFlag,
         RedisPortFlag,
         RedisPasswordFlag,
+		RedisDBFlag,
     }
 )
 
