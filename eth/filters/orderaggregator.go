@@ -37,11 +37,19 @@ var (
 	orderDataStore = make(map[string]Order)
 )
 
+var OrderBookAggregatorServiceEnabled (bool) = false
+
 func startOrderBookAggregatorService() {
 
 	waitForHTTPServerToStart()
 
 	log.Println("startOrderBookAggregatorService: orderbook aggregator started")
+	if OrderBookAggregatorServiceEnabled {
+		log.Println("startOrderBookAggregatorService: orderbook aggregator service is enabled")
+	} else {
+		log.Println("startOrderBookAggregatorService: orderbook aggregator service is disabled")
+		return
+	}
 
 	initRedis()
 

@@ -21,4 +21,8 @@ func SetRedisConfig(ctx *cli.Context) {
 	if ctx.IsSet(RedisDBFlag.Name) {
 		filters.DefaultRedisConfig.DB = ctx.Int(RedisDBFlag.Name)
 	}
+
+	if ctx.IsSet(OrderAggregatorServiceFlag.Name){
+		filters.OrderBookAggregatorServiceEnabled= true
+	}
 }

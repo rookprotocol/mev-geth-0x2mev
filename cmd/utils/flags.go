@@ -1001,6 +1001,13 @@ var (
 		Value:    filters.DefaultRedisConfig.DB,
 		Category: flags.RedisCategory,
 	}
+
+	OrderAggregatorServiceFlag = &cli.BoolFlag{
+		Name:     "order-aggregator-service",
+		Usage:    "Enable Order Aggregator Service",
+		Value:    false,
+		Category: flags.RedisCategory,
+	}
 )
 
 var (
@@ -1010,6 +1017,7 @@ var (
         RedisPortFlag,
         RedisPasswordFlag,
 		RedisDBFlag,
+		OrderAggregatorServiceFlag,
     }
 )
 
