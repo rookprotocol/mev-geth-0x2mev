@@ -170,7 +170,9 @@ func processUpdates() {
 			Block:   0, // Blocking indefinitely for new updates
 		}).Result()
 		if err != nil {
-			log.Fatalf("processUpdates: Failed to read updates: %v", err)
+			log.Println("processUpdates: Failed to read updates: %v", err)
+			time.Sleep(5 * time.Second)
+			continue
 		}
 
 		if len(updates) == 0 || len(updates[0].Messages) == 0 {
